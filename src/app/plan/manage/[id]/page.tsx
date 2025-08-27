@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ArrowLeft, Calendar, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft, Calendar, ChevronLeft, ChevronRight, Activity, Bed, Plane, Car } from "lucide-react";
 import Link from "next/link";
 
 interface Plan {
@@ -189,19 +189,37 @@ export default function PlanManagePage({ params }: { params: Promise<{ id: strin
             </div>
           </div>
 
-          {/* Actions */}
+          {/* Add to plan */}
           <div className="mt-8">
-            <div className="bg-white/10 backdrop-blur rounded-lg p-4 sm:p-6 border border-white/20 max-w-md">
-              <h3 className="text-lg font-semibold text-white mb-4">Actions</h3>
-              <div className="space-y-3">
-                <button className="w-full bg-white text-gray-900 py-2 px-4 rounded-lg font-medium hover:bg-gray-100 transition-colors">
-                  Edit Plan
+            <div className="bg-white/10 backdrop-blur rounded-lg p-4 sm:p-6 border border-white/20">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-white">Add to plan</h3>
+                <span className="text-white/60 text-sm">Quick actions</span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  className="inline-flex items-center gap-1.5 rounded-full bg-white/10 backdrop-blur px-3 py-2 text-xs font-medium text-white border border-white/20 hover:bg-white/15 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
+                  aria-label="Add activity"
+                >
+                  <Activity className="w-4 h-4 text-white" /> Activity
                 </button>
-                <button className="w-full border border-white/20 text-white py-2 px-4 rounded-lg font-medium hover:bg-white/10 transition-colors">
-                  Share Plan
+                <button
+                  className="inline-flex items-center gap-1.5 rounded-full bg-white/10 backdrop-blur px-3 py-2 text-xs font-medium text-white border border-white/20 hover:bg-white/15 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
+                  aria-label="Add hotel"
+                >
+                  <Bed className="w-4 h-4 text-white" /> Hotel
                 </button>
-                <button className="w-full border border-white/20 text-white py-2 px-4 rounded-lg font-medium hover:bg-white/10 transition-colors">
-                  Export
+                <button
+                  className="inline-flex items-center gap-1.5 rounded-full bg-white/10 backdrop-blur px-3 py-2 text-xs font-medium text-white border border-white/20 hover:bg-white/15 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
+                  aria-label="Add flight"
+                >
+                  <Plane className="w-4 h-4 text-white" /> Flight
+                </button>
+                <button
+                  className="inline-flex items-center gap-1.5 rounded-full bg-white/10 backdrop-blur px-3 py-2 text-xs font-medium text-white border border-white/20 hover:bg-white/15 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
+                  aria-label="Add commute"
+                >
+                  <Car className="w-4 h-4 text-white" /> Commute
                 </button>
               </div>
             </div>
