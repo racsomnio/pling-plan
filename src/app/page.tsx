@@ -1,103 +1,169 @@
-import Image from "next/image";
+"use client";
+
+import { useState } from "react";
+import { Plus, Calendar, Clock, Users, Target, CheckCircle } from "lucide-react";
+import Link from "next/link";
+
+interface Plan {
+  id: string;
+  title: string;
+  description: string;
+  date: string;
+  time: string;
+  participants: number;
+  status: "upcoming" | "completed" | "cancelled";
+}
 
 export default function Home() {
-  return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [plans, setPlans] = useState<Plan[]>([]);
+  const [activeTab, setActiveTab] = useState<"upcoming" | "past">("upcoming");
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  const filteredPlans = plans.filter(plan => 
+    activeTab === "upcoming" ? plan.status === "upcoming" : plan.status === "completed"
+  );
+
+  return (
+    <div className="min-h-screen bg-gray-900">
+      {/* Header */}
+      <header className="border-b border-gray-800 bg-gray-900/95 backdrop-blur supports-[backdrop-filter]:bg-gray-900/75">
+        <div className="flex items-center justify-between px-6 py-4">
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2">
+              <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
+                <Target className="w-5 h-5 text-white" />
+              </div>
+              <span className="text-xl font-bold">Pling Plan</span>
+            </div>
+          </div>
+          
+          <div className="flex items-center space-x-4">
+            <button className="text-gray-400 hover:text-white transition-colors">
+              <Calendar className="w-5 h-5" />
+            </button>
+            <button className="text-gray-400 hover:text-white transition-colors">
+              <Users className="w-5 h-5" />
+            </button>
+            <Link 
+              href="/create"
+              className="bg-white text-gray-900 px-4 py-2 rounded-lg font-medium hover:bg-gray-100 transition-colors flex items-center space-x-2"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Create Plan</span>
+            </Link>
+          </div>
         </div>
+      </header>
+
+      {/* Navigation */}
+      <nav className="border-b border-gray-800">
+        <div className="px-6 py-4">
+          <div className="flex items-center space-x-8">
+            <button className="text-white font-medium border-b-2 border-white pb-2">
+              Plans
+            </button>
+            <button className="text-gray-400 hover:text-white transition-colors">
+              Calendars
+            </button>
+            <button className="text-gray-400 hover:text-white transition-colors">
+              Discover
+            </button>
+          </div>
+        </div>
+      </nav>
+
+      {/* Main Content */}
+      <main className="px-6 py-8">
+        <div className="flex items-center justify-between mb-8">
+          <h1 className="text-3xl font-bold">Plans</h1>
+          <div className="flex space-x-2 bg-gray-800 rounded-lg p-1">
+            <button
+              onClick={() => setActiveTab("upcoming")}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                activeTab === "upcoming"
+                  ? "bg-white text-gray-900"
+                  : "text-gray-400 hover:text-white"
+              }`}
+            >
+              Upcoming
+            </button>
+            <button
+              onClick={() => setActiveTab("past")}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                activeTab === "past"
+                  ? "bg-white text-gray-900"
+                  : "text-gray-400 hover:text-white"
+              }`}
+            >
+              Past
+            </button>
+          </div>
+        </div>
+
+        {filteredPlans.length === 0 ? (
+          <div className="text-center py-16">
+            <div className="w-24 h-24 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Calendar className="w-12 h-12 text-gray-400" />
+            </div>
+            <h2 className="text-2xl font-semibold mb-2">
+              No {activeTab === "upcoming" ? "Upcoming" : "Past"} Plans
+            </h2>
+            <p className="text-gray-400 mb-6">
+              {activeTab === "upcoming" 
+                ? "You have no upcoming plans. Why not create one?"
+                : "You have no past plans yet."
+              }
+            </p>
+            {activeTab === "upcoming" && (
+              <Link
+                href="/create"
+                className="bg-white text-gray-900 px-6 py-3 rounded-lg font-medium hover:bg-gray-100 transition-colors flex items-center space-x-2 mx-auto w-fit"
+              >
+                <Plus className="w-5 h-5" />
+                <span>Create Plan</span>
+              </Link>
+            )}
+          </div>
+        ) : (
+          <div className="grid gap-4">
+            {filteredPlans.map((plan) => (
+              <div
+                key={plan.id}
+                className="bg-gray-800 rounded-lg p-6 border border-gray-700 hover:border-gray-600 transition-colors"
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <h3 className="text-xl font-semibold mb-2">{plan.title}</h3>
+                    {plan.description && (
+                      <p className="text-gray-400 mb-4">{plan.description}</p>
+                    )}
+                    <div className="flex items-center space-x-6 text-sm text-gray-400">
+                      <div className="flex items-center space-x-2">
+                        <Calendar className="w-4 h-4" />
+                        <span>{plan.date}</span>
+                      </div>
+                      {plan.time && (
+                        <div className="flex items-center space-x-2">
+                          <Clock className="w-4 h-4" />
+                          <span>{plan.time}</span>
+                        </div>
+                      )}
+                      <div className="flex items-center space-x-2">
+                        <Users className="w-4 h-4" />
+                        <span>{plan.participants} participant{plan.participants !== 1 ? 's' : ''}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    {plan.status === "completed" && (
+                      <CheckCircle className="w-5 h-5 text-green-500" />
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
     </div>
   );
 }
