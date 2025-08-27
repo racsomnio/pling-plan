@@ -43,7 +43,7 @@ export default function PlanManagePage({ params }: { params: Promise<{ id: strin
   }, [planId]);
 
   const generateDateRange = (startDate: Date, endDate: Date) => {
-    const dates = [];
+    const dates: Date[] = [];
     const currentDate = new Date(startDate);
     
     while (currentDate <= endDate) {
@@ -58,6 +58,29 @@ export default function PlanManagePage({ params }: { params: Promise<{ id: strin
     return date.toLocaleDateString('en-US', { 
       weekday: 'short'
     });
+  };
+
+  // Elegant date range: "Aug 11 – 25, 2025" or "Aug 28 – Sep 3, 2025"
+  // If years differ: "Dec 30, 2025 – Jan 2, 2026"
+  const formatDateRange = (startDate: Date, endDate: Date) => {
+    const sMonth = startDate.toLocaleString('en-US', { month: 'short' });
+    const eMonth = endDate.toLocaleString('en-US', { month: 'short' });
+    const sDay = startDate.getDate();
+    const eDay = endDate.getDate();
+    const sYear = startDate.getFullYear();
+    const eYear = endDate.getFullYear();
+
+    const dash = " – ";
+
+    if (sYear !== eYear) {
+      return `${sMonth} ${sDay}, ${sYear}${dash}${eMonth} ${eDay}, ${eYear}`;
+    }
+
+    if (sMonth === eMonth) {
+      return `${sMonth} ${sDay}${dash}${eDay}, ${sYear}`;
+    }
+
+    return `${sMonth} ${sDay}${dash}${eMonth} ${eDay}, ${sYear}`;
   };
 
   if (!plan) {
@@ -114,10 +137,10 @@ export default function PlanManagePage({ params }: { params: Promise<{ id: strin
                 {plan.name}
               </h1>
               
-              {/* Simple Date Range Display */}
+              {/* Elegant Date Range Display */}
               <div className="flex items-center space-x-3 mb-2">
-                <span className="text-white/90 text-lg">
-                  {plan.startDate.toLocaleDateString()} - {plan.endDate.toLocaleDateString()}
+                <span className="text-white/90 text-lg font-medium">
+                  {formatDateRange(plan.startDate, plan.endDate)}
                 </span>
               </div>
               
