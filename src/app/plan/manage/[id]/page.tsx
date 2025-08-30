@@ -1,8 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ArrowLeft, Calendar, ChevronLeft, ChevronRight, Activity, Bed, Plane, Car } from "lucide-react";
+import { ArrowLeft, Calendar, ChevronLeft, ChevronRight, Activity, Bed, Plane, Car, Utensils } from "lucide-react";
 import Link from "next/link";
+import PlacePicker from "../../../../components/PlacePicker";
+import ActivityCreator, { ActivityItem } from "../../../../components/ActivityCreator";
 
 interface Plan {
   id: string;
@@ -16,6 +18,9 @@ interface Plan {
 export default function PlanManagePage({ params }: { params: Promise<{ id: string }> }) {
   const [plan, setPlan] = useState<Plan | null>(null);
   const [planId, setPlanId] = useState<string>("");
+  const [showPlacePicker, setShowPlacePicker] = useState(false); // deprecated by ActivityCreator, keep if needed
+  const [showActivityCreator, setShowActivityCreator] = useState(false);
+  const [activities, setActivities] = useState<ActivityItem[]>([]);
 
   // Handle async params
   useEffect(() => {
@@ -189,6 +194,29 @@ export default function PlanManagePage({ params }: { params: Promise<{ id: strin
             </div>
           </div>
 
+          {/* Activities list */}
+          {activities.length > 0 && (
+            <div className="mb-6">
+              <div className="bg-white/10 backdrop-blur rounded-lg p-4 border border-white/20">
+                <h3 className="text-white font-semibold mb-3">Activities</h3>
+                <div className="space-y-3">
+                  {activities.map(a => (
+                    <div key={a.id} className="rounded-lg border border-white/20 bg-white/5 p-3">
+                      <div className="text-white font-medium">{a.name}</div>
+                      {a.address && <div className="text-white/60 text-sm">{a.address}</div>}
+                      <div className="flex flex-wrap gap-2 mt-2 items-center text-xs text-white/70">
+                        {a.time && <span className="px-2 py-1 rounded-full border border-white/20 bg-white/10">{a.time}</span>}
+                        {a.tags.map(t => (
+                          <span key={t} className="px-2 py-1 rounded-full border border-white/20 bg-white/10">{t.replace("_", " ")}</span>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Add to plan */}
           <div className="mt-8">
             <div className="bg-white/10 backdrop-blur rounded-lg p-4 sm:p-6 border border-white/20">
@@ -198,6 +226,7 @@ export default function PlanManagePage({ params }: { params: Promise<{ id: strin
               </div>
               <div className="flex flex-wrap gap-2">
                 <button
+                  onClick={() => setShowActivityCreator(true)}
                   className="inline-flex items-center gap-1.5 rounded-full bg-white/10 backdrop-blur px-3 py-2 text-xs font-medium text-white border border-white/20 hover:bg-white/15 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
                   aria-label="Add activity"
                 >
@@ -205,9 +234,15 @@ export default function PlanManagePage({ params }: { params: Promise<{ id: strin
                 </button>
                 <button
                   className="inline-flex items-center gap-1.5 rounded-full bg-white/10 backdrop-blur px-3 py-2 text-xs font-medium text-white border border-white/20 hover:bg-white/15 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
-                  aria-label="Add hotel"
+                  aria-label="Add stay"
                 >
-                  <Bed className="w-4 h-4 text-white" /> Hotel
+                  <Bed className="w-4 h-4 text-white" /> Stay
+                </button>
+                <button
+                  className="inline-flex items-center gap-1.5 rounded-full bg-white/10 backdrop-blur px-3 py-2 text-xs font-medium text-white border border-white/20 hover:bg-white/15 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
+                  aria-label="Add food"
+                >
+                  <Utensils className="w-4 h-4 text-white" /> Food
                 </button>
                 <button
                   className="inline-flex items-center gap-1.5 rounded-full bg-white/10 backdrop-blur px-3 py-2 text-xs font-medium text-white border border-white/20 hover:bg-white/15 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
@@ -224,6 +259,28 @@ export default function PlanManagePage({ params }: { params: Promise<{ id: strin
               </div>
             </div>
           </div>
+
+          {showActivityCreator && (
+            <ActivityCreator
+              isOpen={showActivityCreator}
+              onClose={() => setShowActivityCreator(false)}
+              onAdd={(activity) => {
+                setActivities(prev => [activity, ...prev]);
+                setShowActivityCreator(false);
+              }}
+            />
+          )}
+
+          {showPlacePicker && (
+            <PlacePicker
+              isOpen={showPlacePicker}
+              onClose={() => setShowPlacePicker(false)}
+              onConfirm={(place) => {
+                console.log("Picked place:", place);
+                setShowPlacePicker(false);
+              }}
+            />
+          )}
         </div>
       </div>
     </div>
