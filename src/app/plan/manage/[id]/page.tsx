@@ -20,7 +20,9 @@ export default function PlanManagePage({ params }: { params: Promise<{ id: strin
   const [planId, setPlanId] = useState<string>("");
   const [showPlacePicker, setShowPlacePicker] = useState(false); // deprecated by ActivityCreator, keep if needed
   const [showActivityCreator, setShowActivityCreator] = useState(false);
-  const [activities, setActivities] = useState<ActivityItem[]>([]);
+  interface PlannedActivity extends ActivityItem { date: string }
+  const [activities, setActivities] = useState<PlannedActivity[]>([]);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
   // Handle async params
   useEffect(() => {
@@ -46,6 +48,14 @@ export default function PlanManagePage({ params }: { params: Promise<{ id: strin
     };
     setPlan(samplePlan);
   }, [planId]);
+
+  // Ensure we have a selected date (default to startDate) — must be before any early returns
+  useEffect(() => {
+    if (!plan) return;
+    if (!selectedDate) {
+      setSelectedDate(plan.startDate);
+    }
+  }, [plan, selectedDate]);
 
   const generateDateRange = (startDate: Date, endDate: Date) => {
     const dates: Date[] = [];
@@ -97,6 +107,12 @@ export default function PlanManagePage({ params }: { params: Promise<{ id: strin
   }
 
   const dateRange = generateDateRange(plan.startDate, plan.endDate);
+
+  const formatDateKey = (date: Date) => date.toISOString().slice(0, 10);
+  const selectedDateKey = selectedDate ? formatDateKey(selectedDate) : null;
+  const visibleActivities = selectedDateKey
+    ? activities.filter(a => a.date === selectedDateKey)
+    : activities;
 
   return (
     <div className={`min-h-screen ${plan.backgroundColor}`}>
@@ -156,7 +172,8 @@ export default function PlanManagePage({ params }: { params: Promise<{ id: strin
             </div>
           </div>
 
-          {/* Timeline */}
+          {/* Timeline */
+          }
           <div className="bg-white/10 backdrop-blur rounded-lg p-4 sm:p-6 border border-white/20">
             <h2 className="text-xl font-semibold text-white mb-4">Timeline</h2>
             
@@ -173,34 +190,44 @@ export default function PlanManagePage({ params }: { params: Promise<{ id: strin
               {/* Timeline Container */}
               <div className="overflow-x-auto scrollbar-hide">
                 <div className="flex space-x-4 min-w-max pb-4">
-                  {dateRange.map((date, index) => (
-                    <div
-                      key={index}
-                      className="flex-shrink-0 w-20 sm:w-24 bg-white/10 backdrop-blur rounded-lg p-3 border border-white/20 text-center"
-                    >
-                      <div className="text-white/60 text-xs font-medium mb-1">
-                        {formatDayOfWeek(date)}
-                      </div>
-                      <div className="text-white text-lg font-bold">
-                        {date.getDate()}
-                      </div>
-                      <div className="text-white/60 text-xs">
-                        {date.toLocaleDateString('en-US', { month: 'short' })}
-                      </div>
-                    </div>
-                  ))}
+                  {dateRange.map((date, index) => {
+                    const isSelected = selectedDate && date.toDateString() === selectedDate.toDateString();
+                    return (
+                      <button
+                        key={index}
+                        onClick={() => setSelectedDate(date)}
+                        className={`flex-shrink-0 w-20 sm:w-24 rounded-lg p-3 text-center transition-colors border ${
+                          isSelected
+                            ? "bg-white/20 border-white/40 text-white"
+                            : "bg-white/10 backdrop-blur border-white/20 text-white"
+                        }`}
+                      >
+                        <div className="text-white/60 text-xs font-medium mb-1">
+                          {formatDayOfWeek(date)}
+                        </div>
+                        <div className="text-white text-lg font-bold">
+                          {date.getDate()}
+                        </div>
+                        <div className="text-white/60 text-xs">
+                          {date.toLocaleDateString('en-US', { month: 'short' })}
+                        </div>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             </div>
           </div>
 
           {/* Activities list */}
-          {activities.length > 0 && (
+          {visibleActivities.length > 0 && (
             <div className="mb-6">
               <div className="bg-white/10 backdrop-blur rounded-lg p-4 border border-white/20">
-                <h3 className="text-white font-semibold mb-3">Activities</h3>
+                <h3 className="text-white font-semibold mb-3">Activities {selectedDate && (
+                  <span className="text-white/60 font-normal">for {selectedDate.toLocaleDateString()}</span>
+                )}</h3>
                 <div className="space-y-3">
-                  {activities.map(a => (
+                  {visibleActivities.map(a => (
                     <div key={a.id} className="rounded-lg border border-white/20 bg-white/5 p-3">
                       <div className="text-white font-medium">{a.name}</div>
                       {a.address && <div className="text-white/60 text-sm">{a.address}</div>}
@@ -265,7 +292,8 @@ export default function PlanManagePage({ params }: { params: Promise<{ id: strin
               isOpen={showActivityCreator}
               onClose={() => setShowActivityCreator(false)}
               onAdd={(activity) => {
-                setActivities(prev => [activity, ...prev]);
+                const dateToUse = selectedDate ?? plan.startDate;
+                setActivities(prev => [{ ...activity, date: formatDateKey(dateToUse) }, ...prev]);
                 setShowActivityCreator(false);
               }}
             />
