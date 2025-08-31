@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { ArrowLeft, Calendar, ChevronLeft, ChevronRight, Activity, Bed, Plane, Car, Utensils } from "lucide-react";
-import Link from "next/link";
+// import Link from "next/link";
 import PlacePicker from "../../../../components/PlacePicker";
-import ActivityCreator, { ActivityItem } from "../../../../components/ActivityCreator";
+import ActivityCreator, { ActivityItem, ActivityTag } from "../../../../components/ActivityCreator";
+import ChatWidget from "../../../../components/ChatWidget";
 
 interface Plan {
   id: string;
@@ -120,10 +121,10 @@ export default function PlanManagePage({ params }: { params: Promise<{ id: strin
       <header className="border-b border-white/20 bg-black/20 backdrop-blur supports-[backdrop-filter]:bg-black/10">
         <div className="flex items-center justify-between px-4 sm:px-6 py-4">
           <div className="flex items-center space-x-4">
-            <Link href="/" className="flex items-center space-x-2 text-white/80 hover:text-white transition-colors">
+            <a href="/" className="flex items-center space-x-2 text-white/80 hover:text-white transition-colors">
               <ArrowLeft className="w-5 h-5" />
               <span>Back</span>
-            </Link>
+            </a>
             <div className="flex items-center space-x-2">
               <div className="w-8 h-8 bg-white/20 backdrop-blur rounded-lg flex items-center justify-center">
                 <Calendar className="w-5 h-5 text-white" />
@@ -231,6 +232,11 @@ export default function PlanManagePage({ params }: { params: Promise<{ id: strin
                     <div key={a.id} className="rounded-lg border border-white/20 bg-white/5 p-3">
                       <div className="text-white font-medium">{a.name}</div>
                       {a.address && <div className="text-white/60 text-sm">{a.address}</div>}
+                      {a.notes && (
+                        <div className="text-white/80 text-sm mt-2 p-2 bg-white/5 rounded border-l-2 border-white/20">
+                          {a.notes}
+                        </div>
+                      )}
                       <div className="flex flex-wrap gap-2 mt-2 items-center text-xs text-white/70">
                         {a.time && <span className="px-2 py-1 rounded-full border border-white/20 bg-white/10">{a.time}</span>}
                         {a.tags.map(t => (
@@ -309,8 +315,32 @@ export default function PlanManagePage({ params }: { params: Promise<{ id: strin
               }}
             />
           )}
-        </div>
+        {/* Floating AI Chat */}
+        <ChatWidget
+          destination={plan.name}
+          selectedDateISO={selectedDateKey}
+          currentDayActivities={visibleActivities}
+          onAddActivity={(s) => {
+            const allowed: ActivityTag[] = ["must", "optional", "landmark", "popular", "hidden_gem"];
+            const normalizedTags: ActivityTag[] = (s.tags || [])
+              .map(t => t.toLowerCase().replace(" ", "_") as ActivityTag)
+              .filter((t): t is ActivityTag => allowed.includes(t));
+            const dateToUse = selectedDate ?? plan.startDate;
+            const newItem: ActivityItem = {
+              id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+              name: s.name,
+              address: s.address || "",
+              lat: s.lat ?? 0,
+              lng: s.lng ?? 0,
+              time: s.time,
+              notes: s.notes,
+              tags: normalizedTags,
+            };
+            setActivities(prev => [{ ...newItem, date: formatDateKey(dateToUse) }, ...prev]);
+          }}
+        />
       </div>
+    </div>
     </div>
   );
 }
