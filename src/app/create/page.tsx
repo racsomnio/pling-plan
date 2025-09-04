@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ArrowLeft, Camera, Palette, Calendar, Globe } from "lucide-react";
+import { ArrowLeft, Camera, Palette, Calendar, Globe, MapPin, X } from "lucide-react";
 import Link from "next/link";
 import CalendarPicker from "../../components/CalendarPicker";
+import CityPicker from "../../components/CityPicker";
 
 interface PlanForm {
   name: string;
@@ -11,6 +12,12 @@ interface PlanForm {
   endDate: Date | null;
   image: string;
   backgroundColor: string;
+  city: {
+    id: string;
+    name: string;
+    country?: string;
+    state?: string;
+  } | null;
 }
 
 const backgroundColors = [
@@ -29,6 +36,7 @@ export default function CreatePage() {
     endDate: null,
     image: "",
     backgroundColor: "bg-gradient-to-br from-purple-500 to-pink-500",
+    city: null,
   });
 
   const [showColorPicker, setShowColorPicker] = useState(false);
@@ -39,12 +47,14 @@ export default function CreatePage() {
     console.log('Plan state updated:', {
       startDate: plan.startDate?.toDateString(),
       endDate: plan.endDate?.toDateString(),
-      name: plan.name
+      name: plan.name,
+      city: plan.city,
+      image: plan.image ? 'has image' : 'no image'
     });
-  }, [plan.startDate, plan.endDate, plan.name]);
+  }, [plan.startDate, plan.endDate, plan.name, plan.city, plan.image]);
 
   const handleCreatePlan = () => {
-    if (plan.name && plan.startDate) {
+    if (plan.name && plan.startDate && plan.city) {
       // Generate a unique ID for the plan
       const planId = Date.now().toString();
       
@@ -128,6 +138,24 @@ export default function CreatePage() {
                   </div>
                 )}
               </div>
+              
+              {/* City Display */}
+              {plan.city && (
+                <div className="absolute bottom-3 left-3 right-3 bg-black/60 backdrop-blur rounded-lg p-2 border border-white/20">
+                  <div className="flex items-center space-x-2 text-white">
+                    <Globe className="w-4 h-4" />
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium text-sm truncate">{plan.city.name}</div>
+                      {plan.city.state && plan.city.country && (
+                        <div className="text-xs opacity-75 truncate">{plan.city.state}, {plan.city.country}</div>
+                      )}
+                      {!plan.city.state && plan.city.country && (
+                        <div className="text-xs opacity-75 truncate">{plan.city.country}</div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Theme Section - Hidden on mobile, shown on desktop */}
@@ -187,6 +215,60 @@ export default function CreatePage() {
               />
             </div>
 
+            {/* City Selection */}
+            <div className="mb-6 sm:mb-8">
+              <h3 className="text-base sm:text-lg font-medium text-white mb-2">Destination</h3>
+              <p className="text-white/60 text-xs sm:text-sm mb-3 sm:mb-4">Where will your adventure take place?</p>
+              
+              {!plan.city && (
+                <CityPicker
+                  selectedCity={plan.city}
+                  onCitySelect={(city) => {
+                    console.log("City selected in parent:", city);
+                    setPlan(prev => ({ ...prev, city }));
+                  }}
+                  onCityImageChange={(imageUrl) => {
+                    console.log("Image changed in parent:", imageUrl);
+                    setPlan(prev => ({ ...prev, image: imageUrl }));
+                  }}
+                  placeholder="Search for a city..."
+                  className="w-full"
+                />
+              )}
+              
+              {plan.city && (
+                <div className="mt-3 p-3 bg-white/10 backdrop-blur rounded-lg border border-white/20">
+                  <div className="flex items-center space-x-2 text-white">
+                    <MapPin className="w-4 h-4 text-white/60" />
+                    <div className="flex-1">
+                      <div className="font-medium text-sm">{plan.city.name}</div>
+                      {plan.city.state && plan.city.country && (
+                        <div className="text-xs text-white/60">{plan.city.state}, {plan.city.country}</div>
+                      )}
+                      {!plan.city.state && plan.city.country && (
+                        <div className="text-xs text-white/60">{plan.city.country}</div>
+                      )}
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      {!plan.image && (
+                        <div className="flex items-center space-x-1 text-xs text-white/60">
+                          <div className="w-2 h-2 bg-white/40 rounded-full animate-pulse"></div>
+                          <span>Loading image...</span>
+                        </div>
+                      )}
+                      <button
+                        onClick={() => setPlan({ ...plan, city: null, image: null })}
+                        className="text-white/60 hover:text-white transition-colors"
+                        title="Clear city selection"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
             {/* Date Range */}
             <div className="mb-6 sm:mb-8">
               <div className="flex items-center space-x-3">
@@ -221,26 +303,6 @@ export default function CreatePage() {
               </div>
             </div>
 
-            {/* Image Upload */}
-            <div className="mb-6 sm:mb-8">
-              <h3 className="text-base sm:text-lg font-medium text-white mb-2">Add Plan Image</h3>
-              <p className="text-white/60 text-xs sm:text-sm mb-3 sm:mb-4">Upload an image to make your plan stand out</p>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) {
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                      setPlan({ ...plan, image: e.target?.result as string });
-                    };
-                    reader.readAsDataURL(file);
-                  }
-                }}
-                className="w-full px-3 py-2 bg-white/10 backdrop-blur border border-white/20 rounded-md text-white focus:outline-none focus:border-white file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-xs sm:file:text-sm file:font-medium file:bg-white file:text-gray-900 hover:file:bg-gray-100 text-xs sm:text-sm"
-              />
-            </div>
 
             {/* Theme Section - Mobile Only */}
             <div className="lg:hidden mb-6 sm:mb-8">
@@ -288,7 +350,7 @@ export default function CreatePage() {
             {/* Create Button */}
             <button
               onClick={handleCreatePlan}
-              disabled={!plan.name || !plan.startDate}
+              disabled={!plan.name || !plan.startDate || !plan.city}
               className="w-full bg-white text-gray-900 py-3 px-6 rounded-lg font-medium hover:bg-gray-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
             >
               Create Plan
