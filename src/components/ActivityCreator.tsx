@@ -6,6 +6,141 @@ import { X, Clock, StickyNote, Tag, MapPin } from "lucide-react";
 
 export type ActivityTag = "must" | "optional" | "landmark" | "popular" | "hidden_gem";
 
+// Helper function to convert Google Places types to user-friendly categories
+const getCategoryFromTypes = (types: string[] = []): string => {
+  const typeMap: { [key: string]: string } = {
+    'restaurant': 'Restaurant',
+    'food': 'Food',
+    'meal_takeaway': 'Takeaway',
+    'cafe': 'Cafe',
+    'bar': 'Bar',
+    'tourist_attraction': 'Attraction',
+    'museum': 'Museum',
+    'art_gallery': 'Gallery',
+    'park': 'Park',
+    'zoo': 'Zoo',
+    'aquarium': 'Aquarium',
+    'lodging': 'Hotel',
+    'hotel': 'Hotel',
+    'shopping_mall': 'Shopping',
+    'store': 'Store',
+    'clothing_store': 'Shopping',
+    'electronics_store': 'Electronics',
+    'book_store': 'Bookstore',
+    'gas_station': 'Gas Station',
+    'hospital': 'Hospital',
+    'pharmacy': 'Pharmacy',
+    'bank': 'Bank',
+    'atm': 'ATM',
+    'post_office': 'Post Office',
+    'police': 'Police',
+    'fire_station': 'Fire Station',
+    'school': 'School',
+    'university': 'University',
+    'church': 'Church',
+    'mosque': 'Mosque',
+    'synagogue': 'Synagogue',
+    'hindu_temple': 'Temple',
+    'cemetery': 'Cemetery',
+    'funeral_home': 'Funeral Home',
+    'embassy': 'Embassy',
+    'local_government_office': 'Government',
+    'city_hall': 'City Hall',
+    'courthouse': 'Courthouse',
+    'library': 'Library',
+    'movie_theater': 'Cinema',
+    'night_club': 'Nightclub',
+    'casino': 'Casino',
+    'spa': 'Spa',
+    'gym': 'Gym',
+    'beauty_salon': 'Beauty Salon',
+    'hair_care': 'Hair Salon',
+    'laundry': 'Laundry',
+    'car_repair': 'Car Repair',
+    'car_wash': 'Car Wash',
+    'parking': 'Parking',
+    'subway_station': 'Subway',
+    'train_station': 'Train Station',
+    'bus_station': 'Bus Station',
+    'airport': 'Airport',
+    'taxi_stand': 'Taxi',
+    'car_rental': 'Car Rental',
+    'bicycle_store': 'Bike Shop',
+    'travel_agency': 'Travel Agency',
+    'real_estate_agency': 'Real Estate',
+    'insurance_agency': 'Insurance',
+    'accounting': 'Accounting',
+    'lawyer': 'Lawyer',
+    'dentist': 'Dentist',
+    'doctor': 'Doctor',
+    'veterinary_care': 'Veterinarian',
+    'pet_store': 'Pet Store',
+    'florist': 'Florist',
+    'furniture_store': 'Furniture',
+    'home_goods_store': 'Home Goods',
+    'hardware_store': 'Hardware',
+    'garden_center': 'Garden Center',
+    'liquor_store': 'Liquor Store',
+    'convenience_store': 'Convenience Store',
+    'supermarket': 'Supermarket',
+    'grocery_or_supermarket': 'Grocery Store',
+    'bakery': 'Bakery',
+    'butcher_shop': 'Butcher',
+    'seafood': 'Seafood',
+    'ice_cream_shop': 'Ice Cream',
+    'candy_store': 'Candy Store',
+    'coffee_shop': 'Coffee Shop',
+    'tea_house': 'Tea House',
+    'juice_bar': 'Juice Bar',
+    'smoothie_bar': 'Smoothie Bar',
+    'sandwich_shop': 'Sandwich Shop',
+    'pizza_place': 'Pizza',
+    'hamburger_restaurant': 'Burger',
+    'fast_food_restaurant': 'Fast Food',
+    'steak_house': 'Steakhouse',
+    'seafood_restaurant': 'Seafood Restaurant',
+    'italian_restaurant': 'Italian',
+    'chinese_restaurant': 'Chinese',
+    'japanese_restaurant': 'Japanese',
+    'korean_restaurant': 'Korean',
+    'thai_restaurant': 'Thai',
+    'indian_restaurant': 'Indian',
+    'mexican_restaurant': 'Mexican',
+    'french_restaurant': 'French',
+    'german_restaurant': 'German',
+    'spanish_restaurant': 'Spanish',
+    'greek_restaurant': 'Greek',
+    'turkish_restaurant': 'Turkish',
+    'lebanese_restaurant': 'Lebanese',
+    'middle_eastern_restaurant': 'Middle Eastern',
+    'african_restaurant': 'African',
+    'brazilian_restaurant': 'Brazilian',
+    'peruvian_restaurant': 'Peruvian',
+    'argentine_restaurant': 'Argentine',
+    'vegetarian_restaurant': 'Vegetarian',
+    'vegan_restaurant': 'Vegan',
+    'gluten_free_restaurant': 'Gluten Free',
+    'kosher_restaurant': 'Kosher',
+    'halal_restaurant': 'Halal',
+  };
+
+  // Find the first matching type
+  for (const type of types) {
+    if (typeMap[type]) {
+      return typeMap[type];
+    }
+  }
+
+  // If no specific match, return a generic category based on common patterns
+  if (types.some(t => t.includes('restaurant') || t.includes('food'))) return 'Restaurant';
+  if (types.some(t => t.includes('tourist') || t.includes('attraction'))) return 'Attraction';
+  if (types.some(t => t.includes('lodging') || t.includes('hotel'))) return 'Hotel';
+  if (types.some(t => t.includes('store') || t.includes('shopping'))) return 'Shopping';
+  if (types.some(t => t.includes('entertainment') || t.includes('theater'))) return 'Entertainment';
+  
+  return 'Place';
+};
+
 export interface ActivityItem {
   id: string;
   name: string;
@@ -15,17 +150,25 @@ export interface ActivityItem {
   time?: string;
   notes?: string;
   tags: ActivityTag[];
+  types?: string[];
 }
 
 interface ActivityCreatorProps {
   isOpen: boolean;
   onClose: () => void;
   onAdd: (activity: ActivityItem) => void;
+  city?: {
+    name: string;
+    state?: string;
+    country: string;
+    lat?: number;
+    lng?: number;
+  } | null;
 }
 
-export default function ActivityCreator({ isOpen, onClose, onAdd }: ActivityCreatorProps) {
+export default function ActivityCreator({ isOpen, onClose, onAdd, city }: ActivityCreatorProps) {
   const [step, setStep] = useState<1 | 2 | 3>(1);
-  const [showPlacePicker, setShowPlacePicker] = useState(false);
+  const [showPlacePicker, setShowPlacePicker] = useState(true);
   const [place, setPlace] = useState<PickedPlace | null>(null);
   const [time, setTime] = useState("");
   const [notes, setNotes] = useState("");
@@ -58,6 +201,7 @@ export default function ActivityCreator({ isOpen, onClose, onAdd }: ActivityCrea
       time,
       notes,
       tags,
+      types: place.types,
     };
     onAdd(activity);
     reset();
@@ -100,15 +244,9 @@ export default function ActivityCreator({ isOpen, onClose, onAdd }: ActivityCrea
                 </div>
               </div>
             ) : (
-              <p className="text-sm text-white/70">Pick a place to start.</p>
+              <p className="text-sm text-white/70">Search for a place to add to your bucket list.</p>
             )}
-            <div className="flex gap-2">
-              <button
-                onClick={() => setShowPlacePicker(true)}
-                className="rounded-full px-4 py-2 text-sm font-medium text-gray-900 bg-white hover:bg-gray-100"
-              >
-                Choose place
-              </button>
+            <div className="flex justify-end">
               <button
                 disabled={!place}
                 onClick={() => setStep(2)}
@@ -122,7 +260,8 @@ export default function ActivityCreator({ isOpen, onClose, onAdd }: ActivityCrea
               <PlacePicker
                 isOpen={showPlacePicker}
                 onClose={() => setShowPlacePicker(false)}
-                onConfirm={(p) => { setPlace(p); setShowPlacePicker(false); }}
+                onConfirm={(p) => { setPlace(p); setShowPlacePicker(false); setStep(2); }}
+                city={city}
               />
             )}
           </div>
@@ -130,15 +269,6 @@ export default function ActivityCreator({ isOpen, onClose, onAdd }: ActivityCrea
 
         {step === 2 && (
           <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-white/80 mb-1"><Clock className="inline w-4 h-4 mr-1" /> Time</label>
-              <input
-                value={time}
-                onChange={(e) => setTime(e.target.value)}
-                type="time"
-                className="w-full rounded-lg border border-white/20 bg-white/10 text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-white/30"
-              />
-            </div>
             <div>
               <label className="block text-sm font-medium text-white/80 mb-1"><StickyNote className="inline w-4 h-4 mr-1" /> Notes</label>
               <textarea

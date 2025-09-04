@@ -10,6 +10,7 @@ export interface PickedPlace {
   lat: number;
   lng: number;
   placeId?: string;
+  types?: string[];
 }
 
 interface PlacePickerProps {
@@ -17,9 +18,16 @@ interface PlacePickerProps {
   onClose: () => void;
   onConfirm: (place: PickedPlace) => void;
   apiKey?: string; // kept for maps loader
+  city?: {
+    name: string;
+    state?: string;
+    country: string;
+    lat?: number;
+    lng?: number;
+  } | null;
 }
 
-export default function PlacePicker({ isOpen, onClose, onConfirm, apiKey }: PlacePickerProps) {
+export default function PlacePicker({ isOpen, onClose, onConfirm, apiKey, city }: PlacePickerProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
   const markerRef = useRef<google.maps.Marker | null>(null);
@@ -46,12 +54,25 @@ export default function PlacePicker({ isOpen, onClose, onConfirm, apiKey }: Plac
       if (isCancelled) return;
 
       const { Map } = (await google.maps.importLibrary("maps")) as google.maps.MapsLibrary;
-      const center = new google.maps.LatLng(37.7749, -122.4194);
+      
+      // Use city information if available, otherwise default to San Francisco
+      let center: google.maps.LatLng;
+      let zoom: number;
+      
+      if (city && city.lat && city.lng) {
+        // Use the actual city coordinates from the plan
+        center = new google.maps.LatLng(city.lat, city.lng);
+        zoom = 10; // Farther zoom to show city area
+      } else {
+        // Fallback to San Francisco if no coordinates available
+        center = new google.maps.LatLng(37.7749, -122.4194);
+        zoom = 13;
+      }
 
       if (containerRef.current) {
         mapRef.current = new Map(containerRef.current, {
           center,
-          zoom: 13,
+          zoom,
           disableDefaultUI: true,
           gestureHandling: "greedy",
           mapId: "pling-plan-map",
@@ -114,6 +135,7 @@ export default function PlacePicker({ isOpen, onClose, onConfirm, apiKey }: Plac
       lat: result.lat,
       lng: result.lng,
       placeId: result.id,
+      types: result.types,
     });
 
     setSuggestions([]);
@@ -132,6 +154,10 @@ export default function PlacePicker({ isOpen, onClose, onConfirm, apiKey }: Plac
           <button onClick={onClose} className="text-white/70 hover:text-white">
             <X className="w-5 h-5" />
           </button>
+        </div>
+
+        <div className="h-72 w-full rounded-lg overflow-hidden border border-white/20 mb-4">
+          <div ref={containerRef} className="h-full w-full" />
         </div>
 
         <div className="mb-3 relative">
@@ -162,10 +188,6 @@ export default function PlacePicker({ isOpen, onClose, onConfirm, apiKey }: Plac
           )}
         </div>
 
-        <div className="h-72 w-full rounded-lg overflow-hidden border border-white/20 mb-4">
-          <div ref={containerRef} className="h-full w-full" />
-        </div>
-
         <div className="flex items-center justify-end gap-2">
           <button
             onClick={onClose}
@@ -178,7 +200,7 @@ export default function PlacePicker({ isOpen, onClose, onConfirm, apiKey }: Plac
             onClick={() => picked && onConfirm(picked)}
             className="rounded-full px-4 py-2 text-sm font-medium text-gray-900 bg-white hover:bg-gray-100 disabled:opacity-50"
           >
-            Add
+            Next
           </button>
         </div>
       </div>

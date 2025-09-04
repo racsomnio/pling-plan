@@ -1,8 +1,144 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, use } from "react";
 import { ArrowLeft, Calendar, ChevronLeft, ChevronRight, Activity, Bed, Plane, Car, Utensils } from "lucide-react";
-// import Link from "next/link";
+
+// Helper function to convert Google Places types to user-friendly categories
+const getCategoryFromTypes = (types: string[] = []): string => {
+  const typeMap: { [key: string]: string } = {
+    'restaurant': 'Restaurant',
+    'food': 'Food',
+    'meal_takeaway': 'Takeaway',
+    'cafe': 'Cafe',
+    'bar': 'Bar',
+    'tourist_attraction': 'Attraction',
+    'museum': 'Museum',
+    'art_gallery': 'Gallery',
+    'park': 'Park',
+    'zoo': 'Zoo',
+    'aquarium': 'Aquarium',
+    'lodging': 'Hotel',
+    'hotel': 'Hotel',
+    'shopping_mall': 'Shopping',
+    'store': 'Store',
+    'clothing_store': 'Shopping',
+    'electronics_store': 'Electronics',
+    'book_store': 'Bookstore',
+    'gas_station': 'Gas Station',
+    'hospital': 'Hospital',
+    'pharmacy': 'Pharmacy',
+    'bank': 'Bank',
+    'atm': 'ATM',
+    'post_office': 'Post Office',
+    'police': 'Police',
+    'fire_station': 'Fire Station',
+    'school': 'School',
+    'university': 'University',
+    'church': 'Church',
+    'mosque': 'Mosque',
+    'synagogue': 'Synagogue',
+    'hindu_temple': 'Temple',
+    'cemetery': 'Cemetery',
+    'funeral_home': 'Funeral Home',
+    'embassy': 'Embassy',
+    'local_government_office': 'Government',
+    'city_hall': 'City Hall',
+    'courthouse': 'Courthouse',
+    'library': 'Library',
+    'movie_theater': 'Cinema',
+    'night_club': 'Nightclub',
+    'casino': 'Casino',
+    'spa': 'Spa',
+    'gym': 'Gym',
+    'beauty_salon': 'Beauty Salon',
+    'hair_care': 'Hair Salon',
+    'laundry': 'Laundry',
+    'car_repair': 'Car Repair',
+    'car_wash': 'Car Wash',
+    'parking': 'Parking',
+    'subway_station': 'Subway',
+    'train_station': 'Train Station',
+    'bus_station': 'Bus Station',
+    'airport': 'Airport',
+    'taxi_stand': 'Taxi',
+    'car_rental': 'Car Rental',
+    'bicycle_store': 'Bike Shop',
+    'travel_agency': 'Travel Agency',
+    'real_estate_agency': 'Real Estate',
+    'insurance_agency': 'Insurance',
+    'accounting': 'Accounting',
+    'lawyer': 'Lawyer',
+    'dentist': 'Dentist',
+    'doctor': 'Doctor',
+    'veterinary_care': 'Veterinarian',
+    'pet_store': 'Pet Store',
+    'florist': 'Florist',
+    'furniture_store': 'Furniture',
+    'home_goods_store': 'Home Goods',
+    'hardware_store': 'Hardware',
+    'garden_center': 'Garden Center',
+    'liquor_store': 'Liquor Store',
+    'convenience_store': 'Convenience Store',
+    'supermarket': 'Supermarket',
+    'grocery_or_supermarket': 'Grocery Store',
+    'bakery': 'Bakery',
+    'butcher_shop': 'Butcher',
+    'seafood': 'Seafood',
+    'ice_cream_shop': 'Ice Cream',
+    'candy_store': 'Candy Store',
+    'coffee_shop': 'Coffee Shop',
+    'tea_house': 'Tea House',
+    'juice_bar': 'Juice Bar',
+    'smoothie_bar': 'Smoothie Bar',
+    'sandwich_shop': 'Sandwich Shop',
+    'pizza_place': 'Pizza',
+    'hamburger_restaurant': 'Burger',
+    'fast_food_restaurant': 'Fast Food',
+    'steak_house': 'Steakhouse',
+    'seafood_restaurant': 'Seafood Restaurant',
+    'italian_restaurant': 'Italian',
+    'chinese_restaurant': 'Chinese',
+    'japanese_restaurant': 'Japanese',
+    'korean_restaurant': 'Korean',
+    'thai_restaurant': 'Thai',
+    'indian_restaurant': 'Indian',
+    'mexican_restaurant': 'Mexican',
+    'french_restaurant': 'French',
+    'german_restaurant': 'German',
+    'spanish_restaurant': 'Spanish',
+    'greek_restaurant': 'Greek',
+    'turkish_restaurant': 'Turkish',
+    'lebanese_restaurant': 'Lebanese',
+    'middle_eastern_restaurant': 'Middle Eastern',
+    'african_restaurant': 'African',
+    'brazilian_restaurant': 'Brazilian',
+    'peruvian_restaurant': 'Peruvian',
+    'argentine_restaurant': 'Argentine',
+    'vegetarian_restaurant': 'Vegetarian',
+    'vegan_restaurant': 'Vegan',
+    'gluten_free_restaurant': 'Gluten Free',
+    'kosher_restaurant': 'Kosher',
+    'halal_restaurant': 'Halal',
+  };
+
+  // Find the first matching type
+  for (const type of types) {
+    if (typeMap[type]) {
+      return typeMap[type];
+    }
+  }
+
+  // If no specific match, return a generic category based on common patterns
+  if (types.some(t => t.includes('restaurant') || t.includes('food'))) return 'Restaurant';
+  if (types.some(t => t.includes('tourist') || t.includes('attraction'))) return 'Attraction';
+  if (types.some(t => t.includes('lodging') || t.includes('hotel'))) return 'Hotel';
+  if (types.some(t => t.includes('store') || t.includes('shopping'))) return 'Shopping';
+  if (types.some(t => t.includes('entertainment') || t.includes('theater'))) return 'Entertainment';
+  
+  return 'Place';
+};
+
+import Link from "next/link";
 import PlacePicker from "../../../../components/PlacePicker";
 import ActivityCreator, { ActivityItem, ActivityTag } from "../../../../components/ActivityCreator";
 import ChatWidget from "../../../../components/ChatWidget";
@@ -18,32 +154,21 @@ interface Plan {
     name: string;
     state?: string;
     country: string;
+    lat?: number;
+    lng?: number;
   } | null;
 }
 
 export default function PlanManagePage({ params }: { params: Promise<{ id: string }> }) {
+  const { id: planId } = use(params);
   const [plan, setPlan] = useState<Plan | null>(null);
-  const [planId, setPlanId] = useState<string>("");
-  const [showPlacePicker, setShowPlacePicker] = useState(false); // deprecated by ActivityCreator, keep if needed
-  const [showActivityCreator, setShowActivityCreator] = useState(false);
-  interface PlannedActivity extends ActivityItem { date: string }
-  const [activities, setActivities] = useState<PlannedActivity[]>([]);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [activities, setActivities] = useState<ActivityItem[]>([]);
+  const [showActivityCreator, setShowActivityCreator] = useState(false);
+  const [showPlacePicker, setShowPlacePicker] = useState(false);
 
-  // Handle async params
+  // Mock data for now
   useEffect(() => {
-    const getParams = async () => {
-      const resolvedParams = await params;
-      setPlanId(resolvedParams.id);
-    };
-    getParams();
-  }, [params]);
-
-  // Mock plan data - in a real app, this would come from your backend
-  useEffect(() => {
-    if (!planId) return;
-    
-    // For demo purposes, create a sample plan
     const samplePlan: Plan = {
       id: planId,
       name: "Summer Vacation Plan",
@@ -54,59 +179,32 @@ export default function PlanManagePage({ params }: { params: Promise<{ id: strin
       city: {
         name: "San Francisco",
         state: "CA",
-        country: "USA"
+        country: "USA",
+        lat: 37.7749,
+        lng: -122.4194
       }
     };
     setPlan(samplePlan);
   }, [planId]);
 
-  // Ensure we have a selected date (default to startDate) — must be before any early returns
-  useEffect(() => {
-    if (!plan) return;
-    if (!selectedDate) {
-      setSelectedDate(plan.startDate);
+  const generateDateRange = (start: Date, end: Date) => {
+    const dates = [];
+    const current = new Date(start);
+    while (current <= end) {
+      dates.push(new Date(current));
+      current.setDate(current.getDate() + 1);
     }
-  }, [plan, selectedDate]);
-
-  const generateDateRange = (startDate: Date, endDate: Date) => {
-    const dates: Date[] = [];
-    const currentDate = new Date(startDate);
-    
-    while (currentDate <= endDate) {
-      dates.push(new Date(currentDate));
-      currentDate.setDate(currentDate.getDate() + 1);
-    }
-    
     return dates;
   };
 
-  const formatDayOfWeek = (date: Date) => {
-    return date.toLocaleDateString('en-US', { 
-      weekday: 'short'
-    });
+  const formatDateRange = (start: Date, end: Date) => {
+    const startStr = start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const endStr = end.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    return `${startStr} - ${endStr}`;
   };
 
-  // Elegant date range: "Aug 11 – 25, 2025" or "Aug 28 – Sep 3, 2025"
-  // If years differ: "Dec 30, 2025 – Jan 2, 2026"
-  const formatDateRange = (startDate: Date, endDate: Date) => {
-    const sMonth = startDate.toLocaleString('en-US', { month: 'short' });
-    const eMonth = endDate.toLocaleString('en-US', { month: 'short' });
-    const sDay = startDate.getDate();
-    const eDay = endDate.getDate();
-    const sYear = startDate.getFullYear();
-    const eYear = endDate.getFullYear();
-
-    const dash = " – ";
-
-    if (sYear !== eYear) {
-      return `${sMonth} ${sDay}, ${sYear}${dash}${eMonth} ${eDay}, ${eYear}`;
-    }
-
-    if (sMonth === eMonth) {
-      return `${sMonth} ${sDay}${dash}${eDay}, ${sYear}`;
-    }
-
-    return `${sMonth} ${sDay}${dash}${eMonth} ${eDay}, ${sYear}`;
+  const formatDayOfWeek = (date: Date) => {
+    return date.toLocaleDateString('en-US', { weekday: 'short' });
   };
 
   if (!plan) {
@@ -121,9 +219,7 @@ export default function PlanManagePage({ params }: { params: Promise<{ id: strin
 
   const formatDateKey = (date: Date) => date.toISOString().slice(0, 10);
   const selectedDateKey = selectedDate ? formatDateKey(selectedDate) : null;
-  const visibleActivities = selectedDateKey
-    ? activities.filter(a => a.date === selectedDateKey)
-    : activities;
+  const visibleActivities: ActivityItem[] = []; // Activities only appear in bucket list, not in day view
 
   return (
     <div className={`min-h-screen ${plan.backgroundColor}`}>
@@ -131,10 +227,10 @@ export default function PlanManagePage({ params }: { params: Promise<{ id: strin
       <header className="border-b border-white/20 bg-black/20 backdrop-blur supports-[backdrop-filter]:bg-black/10">
         <div className="flex items-center justify-between px-4 sm:px-6 py-4">
           <div className="flex items-center space-x-4">
-            <a href="/" className="flex items-center space-x-2 text-white/80 hover:text-white transition-colors">
+            <Link href="/" className="flex items-center space-x-2 text-white/80 hover:text-white transition-colors">
               <ArrowLeft className="w-5 h-5" />
               <span>Back</span>
-            </a>
+            </Link>
             <div className="flex items-center space-x-2">
               <div className="w-8 h-8 bg-white/20 backdrop-blur rounded-lg flex items-center justify-center">
                 <Calendar className="w-5 h-5 text-white" />
@@ -147,7 +243,7 @@ export default function PlanManagePage({ params }: { params: Promise<{ id: strin
 
       {/* Main Content */}
       <div className="p-4 sm:p-6 lg:p-8">
-        <div className="max-w-6xl mx-auto">
+        <div className="max-w-7xl mx-auto">
           {/* Plan Header */}
           <div className="flex flex-col lg:flex-row items-start lg:items-center space-y-4 lg:space-y-0 lg:space-x-6 mb-8">
             {/* Image Thumbnail */}
@@ -199,122 +295,199 @@ export default function PlanManagePage({ params }: { params: Promise<{ id: strin
             </div>
           </div>
 
-          {/* Timeline */
-          }
-          <div className="bg-white/10 backdrop-blur rounded-lg p-4 sm:p-6 border border-white/20">
-            <h2 className="text-xl font-semibold text-white mb-4">Timeline</h2>
-            
-            {/* Horizontal Scrollable Timeline */}
-            <div className="relative">
-              {/* Scroll Buttons */}
-              <button className="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 w-8 h-8 bg-black/50 backdrop-blur rounded-full flex items-center justify-center text-white hover:bg-black/70 transition-colors">
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-              <button className="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 w-8 h-8 bg-black/50 backdrop-blur rounded-full flex items-center justify-center text-white hover:bg-black/70 transition-colors">
-                <ChevronRight className="w-4 h-4" />
-              </button>
+          {/* Main Layout: Timeline + Bucket List */}
+          <div className="flex flex-col xl:flex-row gap-6">
+            {/* Timeline Section - Takes remaining space */}
+            <div className="flex-1 min-w-0">
+              {/* Timeline */}
+              <div className="bg-white/10 backdrop-blur rounded-lg p-4 sm:p-6 border border-white/20">
+                <h2 className="text-xl font-semibold text-white mb-4">Timeline</h2>
+                
+                {/* Horizontal Scrollable Timeline */}
+                <div className="relative">
+                  {/* Scroll Buttons */}
+                  <button className="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 w-8 h-8 bg-black/50 backdrop-blur rounded-full flex items-center justify-center text-white hover:bg-black/70 transition-colors">
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                  <button className="absolute right-0 top-1/2 transform -translate-y-1/2 z-10 w-8 h-8 bg-black/50 backdrop-blur rounded-full flex items-center justify-center text-white hover:bg-black/70 transition-colors">
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
 
-              {/* Timeline Container */}
-              <div className="overflow-x-auto scrollbar-hide">
-                <div className="flex space-x-4 min-w-max pb-4">
-                  {dateRange.map((date, index) => {
-                    const isSelected = selectedDate && date.toDateString() === selectedDate.toDateString();
-                    return (
-                      <button
-                        key={index}
-                        onClick={() => setSelectedDate(date)}
-                        className={`flex-shrink-0 w-20 sm:w-24 rounded-lg p-3 text-center transition-colors border ${
-                          isSelected
-                            ? "bg-white/20 border-white/40 text-white"
-                            : "bg-white/10 backdrop-blur border-white/20 text-white"
-                        }`}
-                      >
-                        <div className="text-white/60 text-xs font-medium mb-1">
-                          {formatDayOfWeek(date)}
-                        </div>
-                        <div className="text-white text-lg font-bold">
-                          {date.getDate()}
-                        </div>
-                        <div className="text-white/60 text-xs">
-                          {date.toLocaleDateString('en-US', { month: 'short' })}
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Activities list */}
-          {visibleActivities.length > 0 && (
-            <div className="mb-6">
-              <div className="bg-white/10 backdrop-blur rounded-lg p-4 border border-white/20">
-                <h3 className="text-white font-semibold mb-3">Activities {selectedDate && (
-                  <span className="text-white/60 font-normal">for {selectedDate.toLocaleDateString()}</span>
-                )}</h3>
-                <div className="space-y-3">
-                  {visibleActivities.map(a => (
-                    <div key={a.id} className="rounded-lg border border-white/20 bg-white/5 p-3">
-                      <div className="text-white font-medium">{a.name}</div>
-                      {a.address && <div className="text-white/60 text-sm">{a.address}</div>}
-                      {a.notes && (
-                        <div className="text-white/80 text-sm mt-2 p-2 bg-white/5 rounded border-l-2 border-white/20">
-                          {a.notes}
-                        </div>
-                      )}
-                      <div className="flex flex-wrap gap-2 mt-2 items-center text-xs text-white/70">
-                        {a.time && <span className="px-2 py-1 rounded-full border border-white/20 bg-white/10">{a.time}</span>}
-                        {a.tags.map(t => (
-                          <span key={t} className="px-2 py-1 rounded-full border border-white/20 bg-white/10">{t.replace("_", " ")}</span>
-                        ))}
-                      </div>
+                  {/* Timeline Container */}
+                  <div className="overflow-x-auto scrollbar-hide">
+                    <div className="flex space-x-4 min-w-max pb-4">
+                      {dateRange.map((date, index) => {
+                        const isSelected = selectedDate && date.toDateString() === selectedDate.toDateString();
+                        return (
+                          <button
+                            key={index}
+                            onClick={() => setSelectedDate(date)}
+                            className={`flex-shrink-0 w-20 sm:w-24 rounded-lg p-3 text-center transition-colors border ${
+                              isSelected
+                                ? "bg-white/20 border-white/40 text-white"
+                                : "bg-white/10 backdrop-blur border-white/20 text-white"
+                            }`}
+                          >
+                            <div className="text-white/60 text-xs font-medium mb-1">
+                              {formatDayOfWeek(date)}
+                            </div>
+                            <div className="text-white text-lg font-bold">
+                              {date.getDate()}
+                            </div>
+                            <div className="text-white/60 text-xs">
+                              {date.toLocaleDateString('en-US', { month: 'short' })}
+                            </div>
+                          </button>
+                        );
+                      })}
                     </div>
-                  ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Activities list */}
+              {visibleActivities.length > 0 && (
+                <div className="mb-6">
+                  <div className="bg-white/10 backdrop-blur rounded-lg p-4 border border-white/20">
+                    <h3 className="text-white font-semibold mb-3">Activities {selectedDate && (
+                      <span className="text-white/60 font-normal">for {selectedDate.toLocaleDateString()}</span>
+                    )}</h3>
+                    <div className="space-y-3">
+                      {visibleActivities.map(a => (
+                        <div key={a.id} className="rounded-lg border border-white/20 bg-white/5 p-3">
+                          <div className="text-white font-medium">{a.name}</div>
+                          {a.address && <div className="text-white/60 text-sm">{a.address}</div>}
+                          {a.notes && (
+                            <div className="text-white/80 text-sm mt-2 p-2 bg-white/5 rounded border-l-2 border-white/20">
+                              {a.notes}
+                            </div>
+                          )}
+                          <div className="flex flex-wrap gap-2 mt-2 items-center text-xs text-white/70">
+                            {a.tags.map((t: string) => (
+                              <span key={t} className="px-2 py-1 rounded-full border border-white/20 bg-white/10">{t.replace("_", " ")}</span>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Add to plan */}
+              <div className="mt-8">
+                <div className="bg-white/10 backdrop-blur rounded-lg p-4 sm:p-6 border border-white/20">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-white">Add to plan</h3>
+                    <span className="text-white/60 text-sm">Quick actions</span>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      onClick={() => setShowActivityCreator(true)}
+                      className="inline-flex items-center gap-1.5 rounded-full bg-white/10 backdrop-blur px-3 py-2 text-xs font-medium text-white border border-white/20 hover:bg-white/15 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
+                      aria-label="Add activity"
+                    >
+                      <Activity className="w-4 h-4 text-white" /> Activity
+                    </button>
+                    <button
+                      className="inline-flex items-center gap-1.5 rounded-full bg-white/10 backdrop-blur px-3 py-2 text-xs font-medium text-white border border-white/20 hover:bg-white/15 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
+                      aria-label="Add stay"
+                    >
+                      <Bed className="w-4 h-4 text-white" /> Stay
+                    </button>
+                    <button
+                      className="inline-flex items-center gap-1.5 rounded-full bg-white/10 backdrop-blur px-3 py-2 text-xs font-medium text-white border border-white/20 hover:bg-white/15 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
+                      aria-label="Add food"
+                    >
+                      <Utensils className="w-4 h-4 text-white" /> Food
+                    </button>
+                    <button
+                      className="inline-flex items-center gap-1.5 rounded-full bg-white/10 backdrop-blur px-3 py-2 text-xs font-medium text-white border border-white/20 hover:bg-white/15 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
+                      aria-label="Add flight"
+                    >
+                      <Plane className="w-4 h-4 text-white" /> Flight
+                    </button>
+                    <button
+                      className="inline-flex items-center gap-1.5 rounded-full bg-white/10 backdrop-blur px-3 py-2 text-xs font-medium text-white border border-white/20 hover:bg-white/15 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
+                      aria-label="Add commute"
+                    >
+                      <Car className="w-4 h-4 text-white" /> Commute
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
-          )}
 
-          {/* Add to plan */}
-          <div className="mt-8">
-            <div className="bg-white/10 backdrop-blur rounded-lg p-4 sm:p-6 border border-white/20">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-white">Add to plan</h3>
-                <span className="text-white/60 text-sm">Quick actions</span>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <button
-                  onClick={() => setShowActivityCreator(true)}
-                  className="inline-flex items-center gap-1.5 rounded-full bg-white/10 backdrop-blur px-3 py-2 text-xs font-medium text-white border border-white/20 hover:bg-white/15 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
-                  aria-label="Add activity"
-                >
-                  <Activity className="w-4 h-4 text-white" /> Activity
-                </button>
-                <button
-                  className="inline-flex items-center gap-1.5 rounded-full bg-white/10 backdrop-blur px-3 py-2 text-xs font-medium text-white border border-white/20 hover:bg-white/15 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
-                  aria-label="Add stay"
-                >
-                  <Bed className="w-4 h-4 text-white" /> Stay
-                </button>
-                <button
-                  className="inline-flex items-center gap-1.5 rounded-full bg-white/10 backdrop-blur px-3 py-2 text-xs font-medium text-white border border-white/20 hover:bg-white/15 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
-                  aria-label="Add food"
-                >
-                  <Utensils className="w-4 h-4 text-white" /> Food
-                </button>
-                <button
-                  className="inline-flex items-center gap-1.5 rounded-full bg-white/10 backdrop-blur px-3 py-2 text-xs font-medium text-white border border-white/20 hover:bg-white/15 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
-                  aria-label="Add flight"
-                >
-                  <Plane className="w-4 h-4 text-white" /> Flight
-                </button>
-                <button
-                  className="inline-flex items-center gap-1.5 rounded-full bg-white/10 backdrop-blur px-3 py-2 text-xs font-medium text-white border border-white/20 hover:bg-white/15 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
-                  aria-label="Add commute"
-                >
-                  <Car className="w-4 h-4 text-white" /> Commute
-                </button>
+            {/* Bucket List Section - Fixed width on desktop */}
+            <div className="w-full xl:w-96 xl:max-w-96 xl:flex-shrink-0">
+              <div className="bg-white/10 backdrop-blur rounded-lg p-4 sm:p-6 border border-white/20 sticky top-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl font-semibold text-white">Bucket List</h2>
+                  <span className="text-white/60 text-sm">
+                    {activities.length} activit{activities.length !== 1 ? 'ies' : 'y'}
+                  </span>
+                </div>
+                
+                {activities.length > 0 ? (
+                  <div className="space-y-3">
+                    {activities.map((activity) => {
+                      return (
+                        <div key={activity.id} className="bg-white/5 backdrop-blur rounded-lg p-3 border border-white/20 hover:bg-white/10 transition-colors">
+                          <div className="mb-2">
+                            <h3 className="text-white font-medium text-sm leading-tight">{activity.name}</h3>
+                          </div>
+                          
+                          {activity.address && (
+                            <p className="text-white/60 text-xs mb-2 line-clamp-2">{activity.address}</p>
+                          )}
+                          
+                          {activity.notes && (
+                            <p className="text-white/70 text-xs mb-2 line-clamp-2 italic">&quot;{activity.notes}&quot;</p>
+                          )}
+                          
+                          <div className="flex flex-wrap gap-1">
+                            {activity.types && activity.types.length > 0 && (
+                              <span className="text-xs bg-green-500/20 text-green-200 px-2 py-1 rounded-full border border-green-400/30 font-medium">
+                                {getCategoryFromTypes(activity.types)}
+                              </span>
+                            )}
+                            {activity.tags.map((tag) => (
+                              <span key={tag} className="text-xs bg-white/10 text-white/80 px-2 py-1 rounded-full border border-white/20">
+                                {tag.replace("_", " ")}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="text-center py-6">
+                    <div className="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <Activity className="w-6 h-6 text-white/50" />
+                    </div>
+                    <h3 className="text-white/80 font-medium mb-2 text-sm">No activities yet</h3>
+                    <p className="text-white/60 text-xs mb-3">Start building your bucket list</p>
+                    <button
+                      onClick={() => setShowActivityCreator(true)}
+                      className="inline-flex items-center gap-2 bg-white/10 backdrop-blur px-3 py-2 rounded-lg text-white border border-white/20 hover:bg-white/15 transition-colors text-sm"
+                    >
+                      <Activity className="w-4 h-4" />
+                      Add First Activity
+                    </button>
+                  </div>
+                )}
+                
+                {/* Add to Bucket List Button */}
+                <div className="mt-4">
+                  <button
+                    onClick={() => setShowActivityCreator(true)}
+                    className="w-full inline-flex items-center justify-center gap-2 bg-white/10 backdrop-blur px-4 py-3 rounded-lg text-white border border-white/20 hover:bg-white/15 transition-colors font-medium text-sm"
+                  >
+                    <Activity className="w-4 h-4" />
+                    Add to Bucket List
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -323,6 +496,7 @@ export default function PlanManagePage({ params }: { params: Promise<{ id: strin
             <ActivityCreator
               isOpen={showActivityCreator}
               onClose={() => setShowActivityCreator(false)}
+              city={plan.city}
               onAdd={(activity) => {
                 const dateToUse = selectedDate ?? plan.startDate;
                 setActivities(prev => [{ ...activity, date: formatDateKey(dateToUse) }, ...prev]);
@@ -341,32 +515,33 @@ export default function PlanManagePage({ params }: { params: Promise<{ id: strin
               }}
             />
           )}
-        {/* Floating AI Chat */}
-        <ChatWidget
-          destination={plan.name}
-          selectedDateISO={selectedDateKey}
-          currentDayActivities={visibleActivities}
-          onAddActivity={(s) => {
-            const allowed: ActivityTag[] = ["must", "optional", "landmark", "popular", "hidden_gem"];
-            const normalizedTags: ActivityTag[] = (s.tags || [])
-              .map(t => t.toLowerCase().replace(" ", "_") as ActivityTag)
-              .filter((t): t is ActivityTag => allowed.includes(t));
-            const dateToUse = selectedDate ?? plan.startDate;
-            const newItem: ActivityItem = {
-              id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-              name: s.name,
-              address: s.address || "",
-              lat: s.lat ?? 0,
-              lng: s.lng ?? 0,
-              time: s.time,
-              notes: s.notes,
-              tags: normalizedTags,
-            };
-            setActivities(prev => [{ ...newItem, date: formatDateKey(dateToUse) }, ...prev]);
-          }}
-        />
+
+          {/* Floating AI Chat */}
+          <ChatWidget
+            destination={plan.name}
+            selectedDateISO={selectedDateKey}
+            currentDayActivities={visibleActivities}
+            onAddActivity={(s) => {
+              const allowed: ActivityTag[] = ["must", "optional", "landmark", "popular", "hidden_gem"];
+              const normalizedTags: ActivityTag[] = (s.tags || [])
+                .map(t => t.toLowerCase().replace(" ", "_") as ActivityTag)
+                .filter((t): t is ActivityTag => allowed.includes(t));
+              const dateToUse = selectedDate ?? plan.startDate;
+              const newItem: ActivityItem = {
+                id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+                name: s.name,
+                address: s.address || "",
+                lat: s.lat ?? 0,
+                lng: s.lng ?? 0,
+                time: s.time,
+                notes: s.notes,
+                tags: normalizedTags,
+              };
+              setActivities(prev => [{ ...newItem, date: formatDateKey(dateToUse) }, ...prev]);
+            }}
+          />
+        </div>
       </div>
-    </div>
     </div>
   );
 }

@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Missing placeId" }, { status: 400 });
   }
 
-  const resp = await fetch(`https://places.googleapis.com/v1/places/${placeId}?fields=id,displayName,formattedAddress,location`, {
+  const resp = await fetch(`https://places.googleapis.com/v1/places/${placeId}?fields=id,displayName,formattedAddress,location,types`, {
     headers: {
       "X-Goog-Api-Key": apiKey,
     },
@@ -31,6 +31,7 @@ export async function GET(req: NextRequest) {
     address: data.formattedAddress || "",
     lat: data.location?.latitude,
     lng: data.location?.longitude,
+    types: data.types || [],
   };
 
   return NextResponse.json({ result });

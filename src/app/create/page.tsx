@@ -17,6 +17,8 @@ interface PlanForm {
     name: string;
     country?: string;
     state?: string;
+    lat?: number;
+    lng?: number;
   } | null;
 }
 
@@ -257,7 +259,7 @@ export default function CreatePage() {
                         </div>
                       )}
                       <button
-                        onClick={() => setPlan({ ...plan, city: null, image: null })}
+                        onClick={() => setPlan({ ...plan, city: null, image: "" })}
                         className="text-white/60 hover:text-white transition-colors"
                         title="Clear city selection"
                       >

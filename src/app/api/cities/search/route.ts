@@ -51,11 +51,14 @@ async function searchWithGooglePlaces(query: string) {
       input: query,
       includedPrimaryTypes: ["locality", "administrative_area_level_1", "country"],
       includeQueryPredictions: false,
+      languageCode: "en",
     }),
   });
 
   if (!response.ok) {
-    throw new Error(`Google Places API error: ${response.status}`);
+    const errorText = await response.text();
+    console.error("Google Places API error details:", errorText);
+    throw new Error(`Google Places API error: ${response.status} - ${errorText}`);
   }
 
   const data = await response.json();
@@ -73,7 +76,9 @@ async function searchWithGooglePlaces(query: string) {
       id: p.placeId,
       name: p.structuredFormat?.mainText?.text || p.text?.text || "",
       country: p.structuredFormat?.secondaryText?.text || "",
-      type: p.types?.[0] || "unknown"
+      type: p.types?.[0] || "unknown",
+      lat: null, // Will be fetched later when place is selected
+      lng: null  // Will be fetched later when place is selected
     }))
     .slice(0, 8);
 }
