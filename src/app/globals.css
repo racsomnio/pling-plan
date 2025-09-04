@@ -1,4 +1,10 @@
 @import "tailwindcss";
+@import "mapbox-gl/dist/mapbox-gl.css";
+
+/* Hide Mapbox logo */
+.mapbox-container .mapboxgl-ctrl-logo {
+  display: none !important;
+}
 
 /* Hide scrollbar for Chrome, Safari and Opera */
 .scrollbar-hide::-webkit-scrollbar {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, use } from "react";
+import { useState, useEffect, use, useRef } from "react";
 import { ArrowLeft, Calendar, ChevronLeft, ChevronRight, Activity, Bed, Plane, Car, Utensils } from "lucide-react";
 
 // Helper function to convert Google Places types to user-friendly categories
@@ -142,6 +142,95 @@ import Link from "next/link";
 import PlacePicker from "../../../../components/PlacePicker";
 import ActivityCreator, { ActivityItem, ActivityTag } from "../../../../components/ActivityCreator";
 import ChatWidget from "../../../../components/ChatWidget";
+
+// Mapbox Map Component
+function MapboxMap({ activities, city }: { activities: ActivityItem[], city: any }) {
+  const mapRef = useRef<HTMLDivElement>(null);
+  const mapInstanceRef = useRef<any>(null);
+
+  useEffect(() => {
+    if (!mapRef.current || activities.length === 0) return;
+
+    const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
+    if (!mapboxToken) {
+      console.warn("Mapbox token not found");
+      return;
+    }
+
+    // Load Mapbox GL JS dynamically
+    const loadMapbox = async () => {
+      try {
+        // Dynamic import for client-side only
+        const mapboxgl = await import('mapbox-gl');
+        mapboxgl.default.accessToken = mapboxToken;
+
+        // Calculate bounds for all activities
+        const validActivities = activities.filter(a => a.lat && a.lng);
+        if (validActivities.length === 0) return;
+
+        const lats = validActivities.map(a => a.lat!);
+        const lngs = validActivities.map(a => a.lng!);
+        
+        const bounds = new mapboxgl.default.LngLatBounds();
+        validActivities.forEach(activity => {
+          bounds.extend([activity.lng!, activity.lat!]);
+        });
+
+        // Create map
+        const map = new mapboxgl.default.Map({
+          container: mapRef.current!,
+          style: 'mapbox://styles/mapbox/dark-v11',
+          center: city?.lat && city?.lng ? [city.lng, city.lat] : [lngs.reduce((a, b) => a + b) / lngs.length, lats.reduce((a, b) => a + b) / lats.length],
+          zoom: 10,
+          interactive: false, // Disable interaction for mini map
+          attributionControl: false,
+        });
+
+        mapInstanceRef.current = map;
+
+        map.on('load', () => {
+          // Fit map to bounds
+          map.fitBounds(bounds, { padding: 20 });
+
+          // Add markers for each activity
+          validActivities.forEach((activity, index) => {
+            const el = document.createElement('div');
+            el.className = 'w-3 h-3 bg-red-500 rounded-full border-2 border-white shadow-lg';
+            el.style.cursor = 'pointer';
+
+            new mapboxgl.default.Marker(el)
+              .setLngLat([activity.lng!, activity.lat!])
+              .setPopup(new mapboxgl.default.Popup({ offset: 25 }).setHTML(`<div class="text-sm font-medium">${activity.name}</div>`))
+              .addTo(map);
+          });
+        });
+
+      } catch (error) {
+        console.error('Error loading Mapbox:', error);
+      }
+    };
+
+    loadMapbox();
+
+    return () => {
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.remove();
+      }
+    };
+  }, [activities, city]);
+
+  return (
+    <div ref={mapRef} className="w-full h-full rounded-lg">
+      {/* Fallback content when map fails to load */}
+      <div className="w-full h-full bg-gradient-to-br from-blue-500/20 to-purple-500/20 flex items-center justify-center text-white/60 text-xs rounded-lg">
+        <div className="text-center">
+          <div className="text-xs font-medium">{activities.length}</div>
+          <div className="text-xs opacity-60">locations</div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 interface Plan {
   id: string;
@@ -419,7 +508,8 @@ export default function PlanManagePage({ params }: { params: Promise<{ id: strin
             </div>
 
             {/* Bucket List Section - Fixed width on desktop */}
-            <div className="w-full xl:w-96 xl:max-w-96 xl:flex-shrink-0">
+            <div className="w-full xl:w-96 xl:max-w-96 xl:flex-shrink-0 relative">
+              
               <div className="bg-white/10 backdrop-blur rounded-lg p-4 sm:p-6 border border-white/20 sticky top-6">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-xl font-semibold text-white">Bucket List</h2>
@@ -484,6 +574,13 @@ export default function PlanManagePage({ params }: { params: Promise<{ id: strin
                     Add to Bucket List
                   </button>
                 </div>
+
+                {/* Mapbox Map */}
+                {activities.length > 0 && (
+                  <div className="mt-4 w-full h-24 rounded-lg overflow-hidden border border-white/20 bg-white/5 mapbox-container">
+                    <MapboxMap activities={activities} city={plan.city} />
+                  </div>
+                )}
               </div>
             </div>
           </div>
