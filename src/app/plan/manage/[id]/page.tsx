@@ -437,10 +437,6 @@ export default function PlanManagePage({ params }: { params: Promise<{ id: strin
                             <h3 className="text-white font-medium text-sm leading-tight">{activity.name}</h3>
                           </div>
                           
-                          {activity.address && (
-                            <p className="text-white/60 text-xs mb-2 line-clamp-2">{activity.address}</p>
-                          )}
-                          
                           {activity.notes && (
                             <p className="text-white/70 text-xs mb-2 line-clamp-2 italic">&quot;{activity.notes}&quot;</p>
                           )}
