@@ -14,6 +14,11 @@ interface Plan {
   endDate: Date;
   image: string;
   backgroundColor: string;
+  city: {
+    name: string;
+    state?: string;
+    country: string;
+  } | null;
 }
 
 export default function PlanManagePage({ params }: { params: Promise<{ id: string }> }) {
@@ -44,8 +49,13 @@ export default function PlanManagePage({ params }: { params: Promise<{ id: strin
       name: "Summer Vacation Plan",
       startDate: new Date("2025-08-12"),
       endDate: new Date("2025-08-26"),
-      image: "", // You can add a default image here
+      image: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=600&fit=crop&crop=center",
       backgroundColor: "bg-gradient-to-br from-purple-500 to-pink-500",
+      city: {
+        name: "San Francisco",
+        state: "CA",
+        country: "USA"
+      }
     };
     setPlan(samplePlan);
   }, [planId]);
@@ -158,6 +168,22 @@ export default function PlanManagePage({ params }: { params: Promise<{ id: strin
               <h1 className="text-3xl lg:text-4xl font-bold text-white mb-3">
                 {plan.name}
               </h1>
+              
+              {/* City Information */}
+              {plan.city && (
+                <div className="flex items-center space-x-2 mb-3">
+                  <div className="w-5 h-5 bg-white/20 backdrop-blur rounded-full flex items-center justify-center">
+                    <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <span className="text-white/90 text-lg font-medium">
+                    {plan.city.name}
+                    {plan.city.state && `, ${plan.city.state}`}
+                    {plan.city.country && `, ${plan.city.country}`}
+                  </span>
+                </div>
+              )}
               
               {/* Elegant Date Range Display */}
               <div className="flex items-center space-x-3 mb-2">
